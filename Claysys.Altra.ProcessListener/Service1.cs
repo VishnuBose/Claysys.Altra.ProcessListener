@@ -30,7 +30,7 @@ namespace Claysys.Altra.ProcessListener
             WriteToFile("Claysys Altra process listener service is started at " + DateTime.Now);
             ReadCustomConfig();
             timer.Elapsed += new ElapsedEventHandler(OnElapsedTime);
-            timer.Interval = timePeriod == 0 ? 1000 : timePeriod; //number in milisecinds  
+            timer.Interval = timePeriod; //number in milisecinds  
             timer.Enabled = true;
         }
 
