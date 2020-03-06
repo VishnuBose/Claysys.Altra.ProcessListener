@@ -68,17 +68,17 @@ namespace Claysys.Altra.ProcessListener
             else
             {
                 WriteToFile(DateTime.Now + " : The process is  running : ");
-                try
-                {
-                    SendEmail(StatusACKMailID, "", "", "Altra process listener service status", "The process is  running");
-                    WriteToFile(DateTime.Now + " : Send mail successfully ");
-                }
-                catch (Exception ex)
-                {
-                    WriteToFile(DateTime.Now + " : Send mail not successfully , " + ex);
+                //try
+                //{
+                //    SendEmail(StatusACKMailID, "", "", "Altra process listener service status", "The process is  running");
+                //    WriteToFile(DateTime.Now + " : Send mail successfully ");
+                //}
+                //catch (Exception ex)
+                //{
+                //    WriteToFile(DateTime.Now + " : Send mail not successfully , " + ex);
 
-                    throw ex;
-                }
+                //    throw ex;
+                //}
             }
         }
 
