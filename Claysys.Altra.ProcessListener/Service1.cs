@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Exchange.WebServices.Data;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
@@ -20,26 +21,39 @@ namespace Claysys.Altra.ProcessListener
         private int timePeriod = 0;
         private string processName;
         private string StatusACKMailID;
+        static Config customConfig;
         public Service1()
         {
             InitializeComponent();
+
         }
 
         protected override void OnStart(string[] args)
         {
-            WriteToFile("Claysys Altra process listener service is started at " + DateTime.Now);
-            ReadCustomConfig();
-            timer.Elapsed += new ElapsedEventHandler(OnElapsedTime);
-            timer.Interval = timePeriod; //number in milisecinds  
-            timer.Enabled = true;
+            try
+            {
+                WriteToFile("Claysys Altra process listener service is started at " + DateTime.Now);
+                customConfig = new Config();
+                ReadCustomConfig();
+                timer.Elapsed += new ElapsedEventHandler(OnElapsedTime);
+                timer.Interval = timePeriod; //number in milisecinds  
+                timer.Enabled = true;
+            }
+            catch (Exception ex)
+            {
+                WriteToFile(DateTime.Now + " : Send mail not successfully , " + ex);
+                throw ex;
+            }
         }
 
 
         private void ReadCustomConfig()
         {
-            timePeriod = Convert.ToInt32(ConfigurationManager.AppSettings["TimePeriod"]);
-            processName = Convert.ToString(ConfigurationManager.AppSettings["ProcessName"]);
-            StatusACKMailID = Convert.ToString(ConfigurationManager.AppSettings["StatusACKMailID"]);
+            Config customConfig = new Config();
+
+            timePeriod = Convert.ToInt32(customConfig.TimePeriod);
+            processName = Convert.ToString(customConfig.ProcessName);
+            StatusACKMailID = Convert.ToString(customConfig.StatusACKMailID);
         }
 
         protected override void OnStop()
@@ -56,16 +70,16 @@ namespace Claysys.Altra.ProcessListener
                 try
                 {
                     string mailBody = @"
-<p>Hi,</p>
-<p>&nbsp;</p>
-<p>The PEGA Bot running in the {0} is stopped due to an internal error. Please review the Bot ASAP.</p>
-<p>&nbsp;</p>
-<p>Thanks,</p>
-<p><strong>Altra RPA Listener</strong></p>
+                                        <p>Hi,</p>
+                                        <p>&nbsp;</p>
+                                        <p>The PEGA Bot running in the {0} is stopped due to an internal error. Please review the Bot ASAP.</p>
+                                        <p>&nbsp;</p>
+                                        <p>Thanks,</p>
+                                        <p><strong>Altra RPA Listener</strong></p>
 
-";
-                    mailBody = string.Format(mailBody, ConfigurationManager.AppSettings["ServerName"]);
-                    SendEmail(StatusACKMailID, "", "", "ATTENTION- Altra PEGA Bot Stopped", mailBody);
+                                        ";
+                    mailBody = string.Format(mailBody, customConfig.ServerName);
+                    SendEmailExchnageService(StatusACKMailID, "", "", "ATTENTION- Altra PEGA Bot Stopped", mailBody);
                     WriteToFile(DateTime.Now + " : Send mail successfully ");
                 }
                 catch (Exception ex)
@@ -78,27 +92,32 @@ namespace Claysys.Altra.ProcessListener
             else
             {
                 WriteToFile(DateTime.Now + " : The process is  running : ");
-                //try
-                //{
-                //    SendEmail(StatusACKMailID, "", "", "Altra process listener service status", "The process is  running");
-                //    WriteToFile(DateTime.Now + " : Send mail successfully ");
-                //}
-                //catch (Exception ex)
-                //{
-                //    WriteToFile(DateTime.Now + " : Send mail not successfully , " + ex);
-
-                //    throw ex;
-                //}
             }
         }
+
+        public static void SendEmailExchnageService(String ToEmail, string cc, string bcc, String Subj, string Message)
+        {
+            string FromEmailid = customConfig.FromMail;
+            string Pass = customConfig.Password;
+            System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+            ExchangeService service = new ExchangeService(ExchangeVersion.Exchange2007_SP1);
+            service.Credentials = new WebCredentials(FromEmailid, Pass);
+            service.Url = new Uri("https://mobile.altra.org/ews/exchange.asmx");
+            EmailMessage email = new EmailMessage(service);
+            email.ToRecipients.Add(ToEmail);
+            email.Subject = Subj;
+            email.Body = new MessageBody(Message);
+            email.SendAndSaveCopy();
+        }
+
 
         public static void SendEmail(String ToEmail, string cc, string bcc, String Subj, string Message)
         {
             //Reading sender Email credential from web.config file  
 
-            string HostAdd = ConfigurationManager.AppSettings["Host"].ToString();
-            string FromEmailid = ConfigurationManager.AppSettings["FromMail"].ToString();
-            string Pass = ConfigurationManager.AppSettings["Password"].ToString();
+            string HostAdd = customConfig.Host.ToString();//  ConfigurationManager.AppSettings["Host"].ToString();
+            string FromEmailid = customConfig.FromMail; //ConfigurationManager.AppSettings["FromMail"].ToString();
+            string Pass = customConfig.Password; //ConfigurationManager.AppSettings["Password"].ToString();
 
             //creating the object of MailMessage  
             MailMessage mailMessage = new MailMessage();
