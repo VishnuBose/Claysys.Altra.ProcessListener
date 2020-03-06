@@ -55,7 +55,17 @@ namespace Claysys.Altra.ProcessListener
                 WriteToFile(DateTime.Now + " : The process is not running : ");
                 try
                 {
-                    SendEmail(StatusACKMailID, "", "", "Altra process listener service status", "The process is not running");
+                    string mailBody = @"
+<p>Hi,</p>
+<p>&nbsp;</p>
+<p>The PEGA Bot running in the {0} is stopped due to an internal error. Please review the Bot ASAP.</p>
+<p>&nbsp;</p>
+<p>Thanks,</p>
+<p><strong>Altra RPA Listener</strong></p>
+
+";
+                    mailBody = string.Format(mailBody, ConfigurationManager.AppSettings["ServerName"]);
+                    SendEmail(StatusACKMailID, "", "", "ATTENTION- Altra PEGA Bot Stopped", mailBody);
                     WriteToFile(DateTime.Now + " : Send mail successfully ");
                 }
                 catch (Exception ex)
